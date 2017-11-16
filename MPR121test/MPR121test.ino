@@ -1,18 +1,18 @@
 /*********************************************************
-This is a library for the MPR121 12-channel Capacitive touch sensor
+  This is a library for the MPR121 12-channel Capacitive touch sensor
 
-Designed specifically to work with the MPR121 Breakout in the Adafruit shop 
+  Designed specifically to work with the MPR121 Breakout in the Adafruit shop
   ----> https://www.adafruit.com/products/
 
-These sensors use I2C communicate, at least 2 pins are required 
-to interface
+  These sensors use I2C communicate, at least 2 pins are required
+  to interface
 
-Adafruit invests time and resources providing this open source code, 
-please support Adafruit and open-source hardware by purchasing 
-products from Adafruit!
+  Adafruit invests time and resources providing this open source code,
+  please support Adafruit and open-source hardware by purchasing
+  products from Adafruit!
 
-Written by Limor Fried/Ladyada for Adafruit Industries.  
-BSD license, all text above must be included in any redistribution
+  Written by Limor Fried/Ladyada for Adafruit Industries.
+  BSD license, all text above must be included in any redistribution
 **********************************************************/
 
 #include <Wire.h>
@@ -26,66 +26,38 @@ Adafruit_MPR121 cap = Adafruit_MPR121();
 uint16_t lasttouched = 0;
 uint16_t currtouched = 0;
 uint16_t capValueBefore = 0;
+uint16_t minimumValue, touched = 50;
 void setup() {
   Serial.begin(9600);
-
-  while (!Serial) { // needed to keep leonardo/micro from starting too fast!
-    delay(10);
-  }
-  
-  Serial.println("Adafruit MPR121 Capacitive Touch sensor test"); 
-  
-  // Default address is 0x5A, if tied to 3.3V its 0x5B
-  // If tied to SDA its 0x5C and if SCL then 0x5D
+ 
   if (!cap.begin(0x5A)) {
     Serial.println("MPR121 not found, check wiring?");
     while (1);
   }
   Serial.println("MPR121 found!");
+  pinMode(13, OUTPUT);
+  for (uint8_t i = 0; i < 100; ++i)
+    minimumValue = cap.filteredData(1);
+
+  uint16_t raw[128];
+  for (uint8_t i = 0; i < 128; ++i) {
+    raw[i] = cap.filteredData(1);
+    if (minimumValue > raw[i] )
+      minimumValue = raw[i];
+  }
+
 }
 
 void loop() {
   int16_t delta = cap.filteredData(1);// - capValueBefore;
-  //capValueBefore = cap.filteredData(1);
-  if(delta <= 155){
-    Serial.println(delta);
-    //Serial.println(" touch");
+//  Serial.print(delta);
+//  Serial.print("\t");
+//  Serial.println(minimumValue - touched);
+
+  if (delta <= (minimumValue - touched)) {
+    digitalWrite(13, HIGH);
+  } else {
+    digitalWrite(13, LOW);
   }
-  //Serial.println(cap.filteredData(1));
   delay(50);
-  // Get the currently touched pads
-//  currtouched = cap.touched();
-//  
-//  for (uint8_t i=0; i<12; i++) {
-//    // it if *is* touched and *wasnt* touched before, alert!
-//    if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
-//      Serial.print(i); Serial.println(" touched");
-//    }
-//    // if it *was* touched and now *isnt*, alert!
-//    if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
-//      Serial.print(i); Serial.println(" released");
-//    }
-//  }
-//
-//  // reset our state
-//  lasttouched = currtouched;
-//
-//  // comment out this line for detailed data from the sensor!
-//  return;
-//  
-//  // debugging info, what
-//  Serial.print("\t\t\t\t\t\t\t\t\t\t\t\t\t 0x"); Serial.println(cap.touched(), HEX);
-//  Serial.print("Filt: ");
-//  for (uint8_t i=0; i<12; i++) {
-//    Serial.print(cap.filteredData(i)); Serial.print("\t");
-//  }
-//  Serial.println();
-//  Serial.print("Base: ");
-//  for (uint8_t i=0; i<12; i++) {
-//    Serial.print(cap.baselineData(i)); Serial.print("\t");
-//  }
-//  Serial.println();
-//  
-//  // put a delay so it isn't overwhelming
-//  delay(100);
 }
