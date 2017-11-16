@@ -51,7 +51,7 @@
 
 
 // Global Constants
-#define TOU_THRESH  0x06
+#define TOU_THRESH  0x01
 #define REL_THRESH  0x0A
 
 uint16_t touchPosition;
@@ -152,6 +152,12 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   if (!digitalRead(IRQ)) {
+    Wire.beginTransmission(0x5A);
+    Wire.write(0x60);
+    Wire.endTransmission();
+
+    delay(10);
+    
     Wire.requestFrom(0x5A, 2);
     byte LSB = Wire.read();
     byte MSB = Wire.read();
